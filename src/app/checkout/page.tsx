@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TimeSlotPicker } from '@/components/checkout/TimeSlotPicker'
 import { StripeCheckout } from '@/components/checkout/StripeCheckout'
-import { Button } from '@/components/ui/Button'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice, generateTimeSlots } from '@/lib/utils'
 import type { BusinessHours, BlockedSlot, Settings, TimeSlot } from '@/types'
@@ -39,7 +38,6 @@ export default function CheckoutPage() {
       const settingsMap = Object.fromEntries(
         (settings ?? []).map((s: { key: string; value: string }) => [s.key, s.value])
       ) as Record<string, string>
-
       const generatedSlots = generateTimeSlots(
         {
           lead_time_minutes: parseInt(settingsMap.lead_time_minutes ?? '30'),
@@ -116,108 +114,113 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 text-xl">←</button>
-          <h1 className="font-bold text-lg">Checkout</h1>
+    <div className="ws-page">
+      <div className="ws-topbar">
+        <div className="ws-topbar-inner">
+          <button className="ws-back-btn" onClick={() => router.back()}>←</button>
+          <span className="ws-page-title">Checkout</span>
         </div>
-      </header>
+      </div>
 
-      <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
+      <div className="ws-section" style={{ paddingBottom: 32 }}>
         {/* Order summary */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-50 font-semibold text-sm text-gray-600">Your order</div>
+        <div className="ws-box">
+          <div className="ws-box-header">Your order</div>
           {items.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0">
-              <span className="text-xs bg-brand-100 text-brand-700 font-bold rounded-full w-6 h-6 flex items-center justify-center">{item.quantity}</span>
-              <span className="flex-1 text-sm">{item.menu_item.name}</span>
-              {item.notes && <span className="text-xs text-gray-400 italic">{item.notes}</span>}
-              <span className="font-semibold text-sm">{formatPrice(item.menu_item.price * item.quantity)}</span>
+            <div key={idx} className="ws-order-row">
+              <div className="ws-order-qty">{item.quantity}</div>
+              <span className="ws-order-name">{item.menu_item.name}</span>
+              {item.notes && <span className="ws-order-note">{item.notes}</span>}
+              <span className="ws-order-price">{formatPrice(item.menu_item.price * item.quantity)}</span>
             </div>
           ))}
-          <div className="px-4 py-3 flex justify-between font-bold">
+          <div className="ws-total-box">
             <span>Total</span>
-            <span className="text-brand-600">{formatPrice(total)}</span>
+            <span style={{ color: 'var(--brand)' }}>{formatPrice(total)}</span>
           </div>
         </div>
 
         {/* Customer details */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          <h2 className="font-semibold text-sm text-gray-600">Your details</h2>
-          <input
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-            placeholder="Your name *"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <input
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-            placeholder="Phone number (optional)"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-          <textarea
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-400"
-            rows={2}
-            placeholder="Order notes (optional)"
-            value={orderNotes}
-            onChange={(e) => setOrderNotes(e.target.value)}
-          />
+        <div className="ws-box">
+          <div className="ws-box-header">Your details</div>
+          <div className="ws-input-group">
+            <input
+              className="ws-input"
+              placeholder="Your name *"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            <input
+              className="ws-input"
+              placeholder="Phone number (optional)"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <textarea
+              className="ws-input"
+              style={{ resize: 'none' }}
+              rows={2}
+              placeholder="Order notes (optional)"
+              value={orderNotes}
+              onChange={(e) => setOrderNotes(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Pickup time */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          <h2 className="font-semibold text-sm text-gray-600">Collection time</h2>
+        <div className="ws-box">
+          <div className="ws-box-header">Collection time</div>
           <TimeSlotPicker slots={slots} value={pickupTime} onChange={setPickupTime} />
         </div>
 
         {/* Payment method */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          <h2 className="font-semibold text-sm text-gray-600">Payment</h2>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="ws-box">
+          <div className="ws-box-header">Payment</div>
+          <div className="ws-pay-options">
             <button
               type="button"
               onClick={() => setPaymentMethod('collection')}
-              className={`py-3 rounded-xl border-2 text-sm font-medium transition-colors ${paymentMethod === 'collection' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-600'}`}
+              className={`ws-pay-option${paymentMethod === 'collection' ? ' selected' : ''}`}
             >
               💵 Pay on collection
             </button>
             <button
               type="button"
               onClick={() => setPaymentMethod('stripe')}
-              className={`py-3 rounded-xl border-2 text-sm font-medium transition-colors ${paymentMethod === 'stripe' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-600'}`}
+              className={`ws-pay-option${paymentMethod === 'stripe' ? ' selected' : ''}`}
             >
               💳 Pay online
             </button>
           </div>
 
+          {error && <div className="ws-error">{error}</div>}
+
           {paymentMethod === 'collection' && !clientSecret && (
-            <form onSubmit={handleCollectionSubmit}>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+            <form onSubmit={handleCollectionSubmit} style={{ padding: '0 16px 16px' }}>
+              <button type="submit" className="ws-submit-btn" disabled={submitting}>
                 {submitting ? 'Placing order…' : `Place order · ${formatPrice(total)}`}
-              </Button>
+              </button>
             </form>
           )}
 
           {paymentMethod === 'stripe' && !clientSecret && (
-            <form onSubmit={handleStripeSubmit}>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+            <form onSubmit={handleStripeSubmit} style={{ padding: '0 16px 16px' }}>
+              <button type="submit" className="ws-submit-btn" disabled={submitting}>
                 {submitting ? 'Preparing payment…' : `Pay now · ${formatPrice(total)}`}
-              </Button>
+              </button>
             </form>
           )}
 
           {clientSecret && (
-            <StripeCheckout
-              clientSecret={clientSecret}
-              onSuccess={onStripeSuccess}
-              onError={(msg) => setError(msg)}
-            />
+            <div style={{ padding: '0 16px 16px' }}>
+              <StripeCheckout
+                clientSecret={clientSecret}
+                onSuccess={onStripeSuccess}
+                onError={(msg) => setError(msg)}
+              />
+            </div>
           )}
         </div>
       </div>

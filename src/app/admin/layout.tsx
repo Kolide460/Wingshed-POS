@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 const NAV = [
-  { href: '/admin', label: '📊 Dashboard', exact: true },
+  { href: '/admin', label: '📊 Dashboard' },
   { href: '/admin/menu', label: '🍗 Menu' },
   { href: '/admin/hours', label: '🕐 Hours' },
   { href: '/admin/slots', label: '🚫 Block slots' },
@@ -11,28 +11,24 @@ const NAV = [
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-gray-900 px-4 py-3 flex items-center gap-2">
-        <span className="text-xl">🍗</span>
-        <span className="text-white font-black">Wingshed Admin</span>
-        <Link href="/" className="ml-auto text-gray-400 text-xs hover:text-gray-200">← Storefront</Link>
-      </header>
+    <div className="ws-admin">
+      <div className="ws-admin-header">
+        <span style={{ fontSize: 20 }}>🍗</span>
+        <span className="ws-admin-header-title">Wingshed Admin</span>
+        <Link href="/menu" className="ws-admin-header-link">← Storefront</Link>
+      </div>
 
-      <nav className="bg-white border-b border-gray-100 overflow-x-auto">
-        <div className="flex px-2">
+      <nav className="ws-admin-nav">
+        <div className="ws-admin-nav-inner">
           {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className="flex-shrink-0 px-4 py-3 text-sm font-medium text-gray-600 hover:text-brand-600 hover:border-b-2 hover:border-brand-500 transition-colors"
-            >
+            <Link key={n.href} href={n.href} className="ws-admin-nav-link">
               {n.label}
             </Link>
           ))}
         </div>
       </nav>
 
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-5">
+      <main className="ws-admin-main">
         {children}
       </main>
     </div>

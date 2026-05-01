@@ -4,60 +4,56 @@ import { useRealtimeOrders } from '@/hooks/useRealtimeOrders'
 import { OrderCard } from '@/components/kitchen/OrderCard'
 import type { OrderStatus } from '@/types'
 
-const COLUMNS: { status: OrderStatus; label: string; bg: string }[] = [
-  { status: 'confirmed', label: '📋 Confirmed', bg: 'bg-blue-50' },
-  { status: 'preparing', label: '🔥 Preparing', bg: 'bg-orange-50' },
-  { status: 'ready', label: '✅ Ready', bg: 'bg-green-50' },
+const COLUMNS: { status: OrderStatus; label: string }[] = [
+  { status: 'confirmed', label: '📋 Confirmed' },
+  { status: 'preparing', label: '🔥 Preparing' },
+  { status: 'ready',     label: '✅ Ready' },
 ]
 
 export default function KitchenPage() {
   const { orders, loading, updateStatus } = useRealtimeOrders(['confirmed', 'preparing', 'ready', 'pending'])
-
   const pendingOrders = orders.filter((o) => o.status === 'pending')
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-white text-xl">Loading orders…</div>
+      <div className="ws-kitchen" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#fff', fontSize: 20 }}>Loading orders…</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
-      <header className="bg-gray-800 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🍗</span>
-          <h1 className="text-white font-black text-xl">Wingshed Kitchen</h1>
+    <div className="ws-kitchen">
+      <div className="ws-kitchen-header">
+        <div className="ws-kitchen-logo">
+          <span>🍗</span> Wingshed Kitchen
         </div>
-        <div className="text-gray-400 text-sm">
+        <span className="ws-kitchen-count">
           {orders.length} active order{orders.length !== 1 ? 's' : ''}
-        </div>
-      </header>
+        </span>
+      </div>
 
       {pendingOrders.length > 0 && (
-        <div className="bg-yellow-500 px-4 py-2 flex items-center gap-2">
-          <span className="font-bold text-yellow-900">⚠ {pendingOrders.length} new order{pendingOrders.length > 1 ? 's' : ''} awaiting confirmation</span>
+        <div className="ws-kitchen-alert">
+          ⚠ {pendingOrders.length} new order{pendingOrders.length > 1 ? 's' : ''} awaiting confirmation
         </div>
       )}
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 overflow-hidden">
-        {COLUMNS.map(({ status, label, bg }) => {
+      <div className="ws-kitchen-cols">
+        {COLUMNS.map(({ status, label }) => {
           const colOrders = orders.filter((o) => o.status === status)
           return (
-            <div key={status} className={`${bg} flex flex-col overflow-hidden`}>
-              <div className="px-4 py-3 border-b border-black/10 flex items-center justify-between">
-                <span className="font-bold text-gray-800">{label}</span>
-                <span className="bg-black/10 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                  {colOrders.length}
-                </span>
+            <div key={status} className="ws-kitchen-col">
+              <div className="ws-kitchen-col-header">
+                <span className="ws-kitchen-col-title">{label}</span>
+                <span className="ws-kitchen-col-count">{colOrders.length}</span>
               </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              <div className="ws-kitchen-cards">
                 {colOrders.map((order) => (
                   <OrderCard key={order.id} order={order} onUpdateStatus={updateStatus} />
                 ))}
                 {colOrders.length === 0 && (
-                  <div className="text-center py-8 text-gray-400 text-sm">No orders</div>
+                  <div style={{ textAlign: 'center', padding: '32px 0', color: '#4b5563', fontSize: 13 }}>No orders</div>
                 )}
               </div>
             </div>
@@ -66,8 +62,10 @@ export default function KitchenPage() {
       </div>
 
       {pendingOrders.length > 0 && (
-        <div className="bg-gray-800 p-3 space-y-2">
-          <div className="text-yellow-400 text-xs font-bold uppercase tracking-wider">New orders — tap to confirm</div>
+        <div style={{ background: '#1f2937', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ color: '#fbbf24', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+            New orders — tap to confirm
+          </div>
           {pendingOrders.map((order) => (
             <OrderCard key={order.id} order={order} onUpdateStatus={updateStatus} />
           ))}

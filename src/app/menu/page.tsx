@@ -34,50 +34,47 @@ export default function MenuPage() {
   const visibleItems = items.filter((i) => i.category_id === activeCategory)
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🍗</span>
-            <h1 className="font-black text-xl tracking-tight">Wingshed</h1>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header className="ws-header">
+        <div className="ws-header-inner">
+          <div className="ws-logo">
+            <div className="ws-logo-icon">🍗</div>
+            Wingshed
           </div>
-          <button
-            onClick={() => setCartOpen(true)}
-            className="relative flex items-center gap-2 bg-brand-500 text-white px-4 py-2 rounded-xl font-semibold text-sm"
-          >
-            🛒 {itemCount > 0 && <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">{itemCount}</span>}
-            {itemCount === 0 ? 'Cart' : formatPrice(total)}
+          <button className="ws-cart-btn" onClick={() => setCartOpen(true)}>
+            {itemCount > 0 && <span className="ws-cart-badge">{itemCount}</span>}
+            🛒 {itemCount === 0 ? 'Cart' : formatPrice(total)}
           </button>
         </div>
-        <div className="max-w-2xl mx-auto px-4 pb-3">
-          <CategoryTabs
-            categories={categories}
-            active={activeCategory}
-            onChange={setActiveCategory}
-          />
-        </div>
+        <CategoryTabs
+          categories={categories}
+          active={activeCategory}
+          onChange={setActiveCategory}
+        />
       </header>
 
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <main style={{ flex: 1, paddingBottom: itemCount > 0 ? 80 : 0 }}>
+        <div className="ws-grid">
           {visibleItems.map((item) => (
             <MenuItemCard key={item.id} item={item} onAdd={addItem} />
           ))}
+          {visibleItems.length === 0 && categories.length === 0 && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '64px 0', color: 'var(--muted)' }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🍗</div>
+              <p>Menu loading…</p>
+            </div>
+          )}
+          {visibleItems.length === 0 && categories.length > 0 && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '64px 0', color: 'var(--muted)' }}>
+              <p>Nothing in this category yet.</p>
+            </div>
+          )}
         </div>
-        {visibleItems.length === 0 && (
-          <div className="text-center py-16 text-gray-400">
-            <div className="text-4xl mb-2">🍗</div>
-            <p>Menu loading…</p>
-          </div>
-        )}
       </main>
 
       {itemCount > 0 && (
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4 max-w-2xl mx-auto w-full">
-          <button
-            onClick={() => setCartOpen(true)}
-            className="w-full bg-brand-500 text-white py-3.5 rounded-xl font-bold text-base flex items-center justify-between px-4"
-          >
+        <div className="ws-bottom-bar">
+          <button className="ws-bottom-btn" onClick={() => setCartOpen(true)}>
             <span>View order ({itemCount})</span>
             <span>{formatPrice(total)}</span>
           </button>

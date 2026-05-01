@@ -1,7 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-import { cn } from '@/lib/utils'
 import type { TimeSlot } from '@/types'
 
 interface Props {
@@ -15,25 +13,20 @@ export function TimeSlotPicker({ slots, value, onChange }: Props) {
 
   if (available.length === 0) {
     return (
-      <div className="text-center py-4 text-gray-500 text-sm">
+      <div className="ws-no-slots">
         No collection slots available today. Please try another day or contact us.
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="ws-slots">
       {available.map((slot) => (
         <button
           key={slot.time}
           type="button"
           onClick={() => onChange(slot.time)}
-          className={cn(
-            'py-2.5 px-2 rounded-xl text-sm font-medium border transition-colors',
-            value === slot.time
-              ? 'bg-brand-500 text-white border-brand-500'
-              : 'bg-white text-gray-700 border-gray-200 hover:border-brand-300 hover:text-brand-600'
-          )}
+          className={`ws-slot${value === slot.time ? ' selected' : ''}`}
         >
           {slot.label}
         </button>
