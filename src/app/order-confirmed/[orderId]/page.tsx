@@ -1,7 +1,15 @@
 import Link from 'next/link'
 import { createServiceClient } from '@/lib/supabase/server'
-import { formatPrice } from '@/lib/utils'
 import type { Order } from '@/types'
+
+function Money({ value }: { value: number }) {
+  const [whole, frac] = value.toFixed(2).split('.')
+  return (
+    <span className="ws-money" style={{ fontSize: 13, fontWeight: 500 }}>
+      <span className="ws-money-symbol">£</span>{whole}<span className="ws-money-frac">.{frac}</span>
+    </span>
+  )
+}
 
 export default async function OrderConfirmedPage({ params }: { params: { orderId: string } }) {
   const supabase = createServiceClient()
@@ -13,61 +21,64 @@ export default async function OrderConfirmedPage({ params }: { params: { orderId
 
   if (!order) {
     return (
-      <div className="ws-confirm">
-        <div className="ws-confirm-inner" style={{ textAlign: 'center' }}>
-          <p style={{ color: 'var(--muted)' }}>Order not found</p>
-          <Link href="/menu" style={{ color: 'var(--brand)', display: 'block', marginTop: 8 }}>Back to menu</Link>
-        </div>
+      <div className="ws-page" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: 'var(--ws-ink-muted)' }}>Order not found</p>
+        <Link href="/menu" style={{ color: 'var(--ws-accent)', marginTop: 8, display: 'block', textAlign: 'center' }}>
+          Back to menu
+        </Link>
       </div>
     )
   }
 
   const o = order as Order
-  const pickup = new Date(o.pickup_time)
+  const isPickup = o.payment_method !== 'stripe' || true
+  const orderCode = `WS-${String(o.order_number).padStart(4, '0')}`
 
   return (
-    <div className="ws-confirm">
-      <div className="ws-confirm-inner">
-        <div className="ws-confirm-hero">
-          <div className="ws-confirm-emoji">🎉</div>
-          <h1 className="ws-confirm-title">Order confirmed!</h1>
-          <p className="ws-confirm-sub">We&apos;ve got your order, see you soon.</p>
+    <div className="ws-page" style={{ paddingTop: 54, paddingBottom: 34 }}>
+      <div className="ws-confirm-wrap">
+        <div className="ws-confirm-tick">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
 
-        <div className="ws-order-num-box">
-          <div className="ws-order-num-label">Order number</div>
-          <div className="ws-order-num">#{o.order_number}</div>
-        </div>
+        <h1 className="ws-confirm-h1">Order in!</h1>
+        <p className="ws-confirm-sub">
+          {isPickup
+            ? "Pick up at 108 Mare St when you see your code."
+            : "We've passed it to the kitchen. Rider's lining up."}
+        </p>
 
-        <div className="ws-confirm-details">
-          <div className="ws-detail-row">
-            <span className="ws-detail-label">Name</span>
-            <span className="ws-detail-value">{o.customer_name}</span>
-          </div>
-          <div className="ws-detail-row">
-            <span className="ws-detail-label">Collect at</span>
-            <span className="ws-detail-value">
-              {pickup.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-          <div className="ws-detail-row">
-            <span className="ws-detail-label">Payment</span>
-            <span className="ws-detail-value">{o.payment_method === 'stripe' ? '✅ Paid online' : '💵 Pay on collection'}</span>
-          </div>
-          <div className="ws-detail-row" style={{ fontWeight: 700 }}>
-            <span className="ws-detail-label">Total</span>
-            <span className="ws-detail-value" style={{ color: 'var(--brand)' }}>{formatPrice(Number(o.total))}</span>
+        <div className="ws-order-card">
+          <div className="ws-eyebrow" style={{ marginBottom: 6 }}>Order code</div>
+          <div className="ws-order-code">{orderCode}</div>
+          <div className="ws-order-meta">
+            <div style={{ textAlign: 'left' }}>
+              <div className="ws-order-meta-label">Ready</div>
+              <div className="ws-order-meta-value">~12 min</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div className="ws-order-meta-label">Paid</div>
+              <div className="ws-order-meta-value"><Money value={Number(o.total)} /></div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="ws-confirm-actions">
-          <Link href="/menu" className="ws-action-btn secondary">
-            Order more
-          </Link>
-          <a href={`/api/print/${o.id}`} target="_blank" rel="noreferrer" className="ws-action-btn primary">
-            🖨 Receipt
-          </a>
-        </div>
+      <div className="ws-confirm-actions">
+        <Link href="/menu" className="ws-ghost-btn">
+          Back to menu
+        </Link>
+        <a
+          href={`/api/print/${o.id}`}
+          target="_blank"
+          rel="noreferrer"
+          className="ws-primary-btn"
+          style={{ textDecoration: 'none', justifyContent: 'center' }}
+        >
+          Print receipt
+        </a>
       </div>
     </div>
   )
