@@ -6,14 +6,16 @@ import type { CartItem, MenuItem } from '@/types'
 const CART_KEY = 'wingshed_cart'
 
 export function useCart() {
-  const [items, setItems] = useState<CartItem[]>([])
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === 'undefined') return []
     try {
       const stored = localStorage.getItem(CART_KEY)
-      if (stored) setItems(JSON.parse(stored))
-    } catch {}
+      return stored ? JSON.parse(stored) : []
+    } catch { return [] }
+  })
+  const [loaded, setLoaded] = useState(typeof window !== 'undefined')
+
+  useEffect(() => {
     setLoaded(true)
   }, [])
 

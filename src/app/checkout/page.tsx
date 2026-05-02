@@ -40,7 +40,8 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (loaded && items.length === 0) router.push('/menu')
-  }, [loaded, items.length])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded])
 
   useEffect(() => {
     const supabase = createClient()
@@ -88,6 +89,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) { setError('Please enter your name'); return }
+    if (!phone.trim()) { setError('Please enter your phone number'); return }
     if (!pickupTime) { setError('Please select a collection time'); return }
     setSubmitting(true)
     setError('')
@@ -142,7 +144,7 @@ export default function CheckoutPage() {
             <div className="ws-mode-icon"><PinIcon /></div>
             <div style={{ flex: 1 }}>
               <div className="ws-mode-card-title">Pickup</div>
-              <div className="ws-mode-card-sub">108 Mare St · ready in ~12 min</div>
+              <div className="ws-mode-card-sub">College Rd, Gloweth, Truro TR1 3GD</div>
             </div>
           </div>
         </div>
@@ -161,7 +163,7 @@ export default function CheckoutPage() {
 
         {/* Phone (optional) */}
         <div className="ws-checkout-section">
-          <div className="ws-eyebrow">Phone (optional)</div>
+          <div className="ws-eyebrow">Phone number</div>
           <input
             className="ws-checkout-input"
             placeholder="07700 000000"
