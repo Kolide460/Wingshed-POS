@@ -335,12 +335,12 @@ body {
   background: rgba(0,0,0,0.4);
 }
 .ws-overlay-panel {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: 0;
-  width: 100%;
   max-width: 480px;
+  margin: 0 auto;
   height: 92vh;
   background: var(--ws-bg);
   border-radius: 20px 20px 0 0;
