@@ -47,14 +47,18 @@ function Money({ value }: { value: number }) {
   )
 }
 
+const SHOW_DIPS_CATEGORIES = ['wings & tenders', 'loaded fries', 'sides']
+
 export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
-  const isWings = categoryName.toLowerCase().includes('wing') || categoryName.toLowerCase().includes('tender')
-  const [sauce, setSauce] = useState<string>(isWings ? 'shed' : '')
+  const cat = categoryName.toLowerCase()
+  const isWings = cat.includes('wing') || cat.includes('tender')
+  const showDips = SHOW_DIPS_CATEGORIES.some(c => cat.includes(c.split(' ')[0]))
+  const [sauce, setSauce] = useState<string>(isWings ? 'hot-honey' : '')
   const [dips, setDips] = useState<string[]>([])
   const [qty, setQty] = useState(1)
   const [notes, setNotes] = useState('')
 
-  const dipsTotal = dips.length * 0.80
+  const dipsTotal = dips.length * 2.00
   const lineTotal = (item.price + dipsTotal) * qty
   const canAdd = !isWings || sauce !== ''
 
@@ -122,7 +126,7 @@ export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
             </div>
           )}
 
-          <div className="ws-section">
+          {showDips && <div className="ws-section">
             <div className="ws-section-header">
               <span className="ws-section-title">Add dips</span>
               <span className="ws-section-hint">£2.00 each</span>
@@ -144,7 +148,7 @@ export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           <div className="ws-section">
             <div className="ws-section-header">

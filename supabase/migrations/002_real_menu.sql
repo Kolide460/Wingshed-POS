@@ -22,13 +22,21 @@ INSERT INTO categories (id, name, display_order, active) VALUES
 -- Sauce is selected in-app via the sauce picker
 INSERT INTO menu_items (category_id, name, description, price, display_order, active) VALUES
   ('c1000000-0001-0000-0000-000000000000',
-   'Wings / Tenders — Small',
-   '6 wings or 3 tenders. Choose your sauce.',
+   'Wings (6)',
+   '6 wings. Choose your sauce.',
    7.95, 1, true),
   ('c1000000-0001-0000-0000-000000000000',
-   'Wings / Tenders — Large',
-   '12 wings or 6 tenders. Choose your sauce.',
-   13.95, 2, true);
+   'Wings (12)',
+   '12 wings. Choose your sauce.',
+   13.95, 2, true),
+  ('c1000000-0001-0000-0000-000000000000',
+   'Tenders (3)',
+   '3 hand-breaded tenders. Choose your sauce.',
+   7.95, 3, true),
+  ('c1000000-0001-0000-0000-000000000000',
+   'Tenders (6)',
+   '6 hand-breaded tenders. Choose your sauce.',
+   13.95, 4, true);
 
 -- ── Chicken Burgers ───────────────────────────
 INSERT INTO menu_items (category_id, name, description, price, display_order, active) VALUES
