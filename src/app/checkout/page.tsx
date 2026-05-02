@@ -3,20 +3,31 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { TimeSlotPicker } from '@/components/checkout/TimeSlotPicker'
 import { StripeCheckout } from '@/components/checkout/StripeCheckout'
-import { Button } from '@/components/ui/Button'
 import { useCart } from '@/hooks/useCart'
-import { formatPrice, generateTimeSlots } from '@/lib/utils'
-import type { BusinessHours, BlockedSlot, Settings, TimeSlot } from '@/types'
+import { generateTimeSlots } from '@/lib/utils'
+import type { BusinessHours, BlockedSlot, TimeSlot } from '@/types'
+
+type PaymentMethod = 'card' | 'cash'
+
+const TIPS = [0, 1, 2, 3]
+
+function Money({ value, size = 15 }: { value: number; size?: number }) {
+  const [whole, frac] = value.toFixed(2).split('.')
+  return (
+    <span className="ws-money" style={{ fontSize: size }}>
+      <span className="ws-money-symbol">£</span>{whole}<span className="ws-money-frac">.{frac}</span>
+    </span>
+  )
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { items, total, clearCart } = useCart()
+  const { items, total, loaded, clearCart } = useCart()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [orderNotes, setOrderNotes] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<'collection' | 'stripe'>('collection')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+  const [tip, setTip] = useState(1)
   const [pickupTime, setPickupTime] = useState('')
   const [slots, setSlots] = useState<TimeSlot[]>([])
   const [clientSecret, setClientSecret] = useState('')
@@ -24,9 +35,12 @@ export default function CheckoutPage() {
   const [error, setError] = useState('')
   const [orderId, setOrderId] = useState('')
 
+  const delivery = 0
+  const grandTotal = total + delivery + tip
+
   useEffect(() => {
-    if (items.length === 0) router.push('/menu')
-  }, [items.length])
+    if (loaded && items.length === 0) router.push('/menu')
+  }, [loaded, items.length])
 
   useEffect(() => {
     const supabase = createClient()
@@ -39,8 +53,7 @@ export default function CheckoutPage() {
       const settingsMap = Object.fromEntries(
         (settings ?? []).map((s: { key: string; value: string }) => [s.key, s.value])
       ) as Record<string, string>
-
-      const generatedSlots = generateTimeSlots(
+      const generated = generateTimeSlots(
         {
           lead_time_minutes: parseInt(settingsMap.lead_time_minutes ?? '30'),
           slot_duration_minutes: parseInt(settingsMap.slot_duration_minutes ?? '15'),
@@ -49,7 +62,7 @@ export default function CheckoutPage() {
         (blocked ?? []) as BlockedSlot[],
         new Date()
       )
-      setSlots(generatedSlots)
+      setSlots(generated)
     }
     loadSlots()
   }, [])
@@ -61,9 +74,9 @@ export default function CheckoutPage() {
       body: JSON.stringify({
         customer_name: name,
         customer_phone: phone,
-        payment_method: paymentMethod,
+        payment_method: paymentMethod === 'card' ? 'stripe' : 'collection',
         pickup_time: pickupTime,
-        order_notes: orderNotes,
+        order_notes: '',
         items,
       }),
     })
@@ -72,41 +85,33 @@ export default function CheckoutPage() {
     return data.order.id as string
   }
 
-  const handleCollectionSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !pickupTime) { setError('Please fill in all required fields'); return }
+    if (!name.trim()) { setError('Please enter your name'); return }
+    if (!pickupTime) { setError('Please select a collection time'); return }
     setSubmitting(true)
     setError('')
     try {
       const id = await createOrder()
-      clearCart()
-      window.open(`/api/print/${id}`, '_blank')
-      router.push(`/order-confirmed/${id}`)
+      if (paymentMethod === 'cash') {
+        clearCart()
+        window.open(`/api/print/${id}`, '_blank')
+        router.push(`/order-confirmed/${id}`)
+      } else {
+        setOrderId(id)
+        const res = await fetch('/api/stripe/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: total, orderId: id }),
+        })
+        const data = await res.json()
+        setClientSecret(data.clientSecret)
+        setSubmitting(false)
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setSubmitting(false)
     }
-  }
-
-  const handleStripeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name || !pickupTime) { setError('Please fill in all required fields'); return }
-    setSubmitting(true)
-    setError('')
-    try {
-      const id = await createOrder()
-      setOrderId(id)
-      const res = await fetch('/api/stripe/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: total, orderId: id }),
-      })
-      const data = await res.json()
-      setClientSecret(data.clientSecret)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-    }
-    setSubmitting(false)
   }
 
   const onStripeSuccess = () => {
@@ -115,112 +120,190 @@ export default function CheckoutPage() {
     router.push(`/order-confirmed/${orderId}`)
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 text-xl">←</button>
-          <h1 className="font-bold text-lg">Checkout</h1>
-        </div>
-      </header>
+  const availableSlots = slots.filter(s => s.available)
 
-      <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
-        {/* Order summary */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-50 font-semibold text-sm text-gray-600">Your order</div>
-          {items.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0">
-              <span className="text-xs bg-brand-100 text-brand-700 font-bold rounded-full w-6 h-6 flex items-center justify-center">{item.quantity}</span>
-              <span className="flex-1 text-sm">{item.menu_item.name}</span>
-              {item.notes && <span className="text-xs text-gray-400 italic">{item.notes}</span>}
-              <span className="font-semibold text-sm">{formatPrice(item.menu_item.price * item.quantity)}</span>
+  return (
+    <div className="ws-page" style={{ overflowY: 'auto' }}>
+      <div style={{ paddingBottom: 120 }}>
+        {/* Header */}
+        <div style={{ padding: '54px 20px 14px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button className="ws-icon-btn" onClick={() => router.back()}>
+            <BackIcon />
+          </button>
+          <span style={{ fontSize: 19, fontWeight: 600, color: 'var(--ws-ink)', letterSpacing: '-0.025em' }}>
+            Checkout
+          </span>
+        </div>
+
+        {/* Mode card */}
+        <div className="ws-checkout-section">
+          <div className="ws-eyebrow">Collection</div>
+          <div className="ws-mode-card">
+            <div className="ws-mode-icon"><PinIcon /></div>
+            <div style={{ flex: 1 }}>
+              <div className="ws-mode-card-title">Pickup</div>
+              <div className="ws-mode-card-sub">108 Mare St · ready in ~12 min</div>
             </div>
-          ))}
-          <div className="px-4 py-3 flex justify-between font-bold">
-            <span>Total</span>
-            <span className="text-brand-600">{formatPrice(total)}</span>
           </div>
         </div>
 
-        {/* Customer details */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          <h2 className="font-semibold text-sm text-gray-600">Your details</h2>
+        {/* Name */}
+        <div className="ws-checkout-section">
+          <div className="ws-eyebrow">Order name</div>
           <input
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-            placeholder="Your name *"
+            className="ws-checkout-input"
+            placeholder="Your name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             required
           />
+        </div>
+
+        {/* Phone (optional) */}
+        <div className="ws-checkout-section">
+          <div className="ws-eyebrow">Phone (optional)</div>
           <input
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-            placeholder="Phone number (optional)"
+            className="ws-checkout-input"
+            placeholder="07700 000000"
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-          <textarea
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-400"
-            rows={2}
-            placeholder="Order notes (optional)"
-            value={orderNotes}
-            onChange={(e) => setOrderNotes(e.target.value)}
+            onChange={e => setPhone(e.target.value)}
           />
         </div>
 
-        {/* Pickup time */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          <h2 className="font-semibold text-sm text-gray-600">Collection time</h2>
-          <TimeSlotPicker slots={slots} value={pickupTime} onChange={setPickupTime} />
+        {/* Time slots */}
+        <div className="ws-checkout-section">
+          <div className="ws-eyebrow">Collection time</div>
+          {availableSlots.length === 0 ? (
+            <div style={{ color: 'var(--ws-ink-muted)', fontSize: 13, padding: '8px 0' }}>
+              No slots available today. Please contact us.
+            </div>
+          ) : (
+            <div className="ws-slot-grid">
+              {availableSlots.map(slot => (
+                <button
+                  key={slot.time}
+                  type="button"
+                  className={`ws-slot-btn${pickupTime === slot.time ? ' selected' : ''}`}
+                  onClick={() => setPickupTime(slot.time)}
+                >
+                  {slot.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Payment method */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          <h2 className="font-semibold text-sm text-gray-600">Payment</h2>
-          <div className="grid grid-cols-2 gap-2">
+        {/* Payment */}
+        <div className="ws-checkout-section">
+          <div className="ws-eyebrow">Payment</div>
+          <div className="ws-payment-list">
             <button
-              type="button"
-              onClick={() => setPaymentMethod('collection')}
-              className={`py-3 rounded-xl border-2 text-sm font-medium transition-colors ${paymentMethod === 'collection' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-600'}`}
+              className={`ws-payment-option${paymentMethod === 'card' ? ' selected' : ''}`}
+              onClick={() => setPaymentMethod('card')}
             >
-              💵 Pay on collection
+              <div style={{ flex: 1 }}>
+                <div className="ws-payment-name">Pay online</div>
+                <div className="ws-payment-sub">Card, Apple Pay, Google Pay</div>
+              </div>
+              <RadioDot active={paymentMethod === 'card'} />
             </button>
             <button
-              type="button"
-              onClick={() => setPaymentMethod('stripe')}
-              className={`py-3 rounded-xl border-2 text-sm font-medium transition-colors ${paymentMethod === 'stripe' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-600'}`}
+              className={`ws-payment-option${paymentMethod === 'cash' ? ' selected' : ''}`}
+              onClick={() => setPaymentMethod('cash')}
             >
-              💳 Pay online
+              <div style={{ flex: 1 }}>
+                <div className="ws-payment-name">Cash on pickup</div>
+                <div className="ws-payment-sub">Pay at the counter</div>
+              </div>
+              <RadioDot active={paymentMethod === 'cash'} />
             </button>
           </div>
+        </div>
 
-          {paymentMethod === 'collection' && !clientSecret && (
-            <form onSubmit={handleCollectionSubmit}>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-                {submitting ? 'Placing order…' : `Place order · ${formatPrice(total)}`}
-              </Button>
-            </form>
+        {/* Tip */}
+        <div className="ws-checkout-section">
+          <div className="ws-eyebrow">Tip the kitchen</div>
+          <div className="ws-tip-grid">
+            {TIPS.map(t => (
+              <button
+                key={t}
+                type="button"
+                className={`ws-tip-btn${tip === t ? ' active' : ''}`}
+                onClick={() => setTip(t)}
+              >
+                £{t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Totals */}
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="ws-summary-row">
+            <span>Subtotal</span>
+            <span><Money value={total} /></span>
+          </div>
+          {tip > 0 && (
+            <div className="ws-summary-row">
+              <span>Tip</span>
+              <span><Money value={tip} /></span>
+            </div>
           )}
+          <div className="ws-summary-row bold">
+            <span>Total</span>
+            <span><Money value={grandTotal} /></span>
+          </div>
+        </div>
 
-          {paymentMethod === 'stripe' && !clientSecret && (
-            <form onSubmit={handleStripeSubmit}>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-                {submitting ? 'Preparing payment…' : `Pay now · ${formatPrice(total)}`}
-              </Button>
-            </form>
-          )}
+        {error && <div className="ws-error-msg" style={{ padding: '0 20px' }}>{error}</div>}
 
-          {clientSecret && (
+        {/* Stripe payment element */}
+        {clientSecret && (
+          <div style={{ padding: '0 20px' }}>
             <StripeCheckout
               clientSecret={clientSecret}
               onSuccess={onStripeSuccess}
-              onError={(msg) => setError(msg)}
+              onError={msg => setError(msg)}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Pay dock */}
+      {!clientSecret && (
+        <div className="ws-cart-footer">
+          <form onSubmit={handleSubmit}>
+            <button type="submit" className="ws-primary-btn" disabled={submitting} style={{ width: '100%' }}>
+              <span>{submitting ? 'Placing order…' : 'Place order'}</span>
+              <Money value={grandTotal} size={15} />
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BackIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+function PinIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M12 21s7-7.5 7-12a7 7 0 10-14 0c0 4.5 7 12 7 12z" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  )
+}
+function RadioDot({ active }: { active: boolean }) {
+  return (
+    <div className={`ws-radio-dot${active ? ' active' : ''}`}>
+      {active && <div className="ws-radio-inner" />}
     </div>
   )
 }
