@@ -7,12 +7,14 @@ const CART_KEY = 'wingshed_cart'
 
 export function useCart() {
   const [items, setItems] = useState<CartItem[]>([])
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CART_KEY)
       if (stored) setItems(JSON.parse(stored))
     } catch {}
+    setLoaded(true)
   }, [])
 
   const persist = useCallback((next: CartItem[]) => {
@@ -78,5 +80,5 @@ export function useCart() {
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
 
-  return { items, addItem, removeItem, updateQuantity, updateNotes, clearCart, total, itemCount }
+  return { items, loaded, addItem, removeItem, updateQuantity, updateNotes, clearCart, total, itemCount }
 }

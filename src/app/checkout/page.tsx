@@ -23,7 +23,7 @@ function Money({ value, size = 15 }: { value: number; size?: number }) {
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { items, total, clearCart } = useCart()
+  const { items, total, loaded, clearCart } = useCart()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
@@ -39,8 +39,8 @@ export default function CheckoutPage() {
   const grandTotal = total + delivery + tip
 
   useEffect(() => {
-    if (items.length === 0) router.push('/menu')
-  }, [items.length])
+    if (loaded && items.length === 0) router.push('/menu')
+  }, [loaded, items.length])
 
   useEffect(() => {
     const supabase = createClient()
