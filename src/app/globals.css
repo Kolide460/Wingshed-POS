@@ -885,6 +885,162 @@ body {
   gap: 10px;
   flex-shrink: 0;
 }
+
+/* ── Receipt / order-confirmed ───────────────── */
+.ws-receipt-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 54px 24px 28px;
+  text-align: center;
+}
+.ws-receipt-card {
+  margin: 0 16px;
+  background: var(--ws-surface);
+  border-radius: 20px;
+  border: 1px solid var(--ws-line);
+  overflow: hidden;
+}
+.ws-receipt-shop {
+  padding: 22px 22px 18px;
+  text-align: center;
+}
+.ws-receipt-shop-name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ws-ink);
+}
+.ws-receipt-shop-addr {
+  font-size: 12px;
+  color: var(--ws-ink-muted);
+  margin-top: 3px;
+  letter-spacing: 0;
+}
+.ws-receipt-divider {
+  height: 1px;
+  background: var(--ws-line);
+  margin: 0 22px;
+}
+.ws-receipt-divider--dashed {
+  background: none;
+  border-top: 1px dashed var(--ws-line);
+}
+.ws-receipt-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 12px;
+  padding: 18px 22px;
+}
+.ws-receipt-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ws-ink-muted);
+  margin-bottom: 3px;
+}
+.ws-receipt-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ws-ink);
+  letter-spacing: -0.01em;
+}
+.ws-receipt-items {
+  padding: 16px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ws-receipt-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ws-receipt-item-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+}
+.ws-receipt-item-qty {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ws-ink-muted);
+  min-width: 22px;
+  margin-top: 1px;
+  font-family: var(--font-geist-mono), monospace;
+}
+.ws-receipt-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ws-ink);
+  letter-spacing: -0.01em;
+}
+.ws-receipt-item-note {
+  font-size: 11px;
+  color: var(--ws-ink-muted);
+  margin-top: 2px;
+}
+.ws-receipt-item-price {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ws-ink);
+  white-space: nowrap;
+}
+.ws-receipt-totals {
+  padding: 16px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ws-receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ws-ink-soft);
+}
+.ws-receipt-total-row--bold {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ws-ink);
+  margin-top: 4px;
+}
+.ws-receipt-code-block {
+  padding: 22px;
+  text-align: center;
+  background: oklch(from var(--ws-accent) l c h / 0.06);
+}
+.ws-receipt-code-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ws-ink-muted);
+  margin-bottom: 10px;
+}
+.ws-receipt-code {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ws-ink);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.ws-receipt-code-hint {
+  font-size: 12px;
+  color: var(--ws-ink-muted);
+  margin-top: 6px;
+}
+.ws-receipt-footer-msg {
+  padding: 16px 22px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ws-ink-muted);
+  border-top: 1px solid var(--ws-line);
+}
 .ws-ghost-btn {
   width: 100%;
   height: 48px;
