@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   const [slots, setSlots] = useState<TimeSlot[]>([])
   const [clientSecret, setClientSecret] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
   const [orderId, setOrderId] = useState('')
 
@@ -94,11 +95,16 @@ export default function CheckoutPage() {
     return data.order.id as string
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleReview = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) { setError('Please enter your name'); return }
     if (!phone.trim()) { setError('Please enter your phone number'); return }
     if (!pickupTime) { setError('Please select a collection time'); return }
+    setError('')
+    setConfirming(true)
+  }
+
+  const handleConfirm = async () => {
     setSubmitting(true)
     setError('')
     try {
@@ -116,6 +122,7 @@ export default function CheckoutPage() {
         })
         const data = await res.json()
         setClientSecret(data.clientSecret)
+        setConfirming(false)
         setSubmitting(false)
       }
     } catch (err: unknown) {
@@ -169,7 +176,7 @@ export default function CheckoutPage() {
           />
         </div>
 
-        {/* Phone (optional) */}
+        {/* Phone */}
         <div className="ws-checkout-section">
           <div className="ws-eyebrow">Phone number</div>
           <input
@@ -179,6 +186,7 @@ export default function CheckoutPage() {
             value={phone}
             onChange={e => setPhone(e.target.value)}
           />
+          <p className="ws-field-hint">The shop may need to call you about your order — make sure this is correct.</p>
         </div>
 
         {/* Time slots */}
@@ -281,12 +289,66 @@ export default function CheckoutPage() {
       {/* Pay dock */}
       {!clientSecret && (
         <div className="ws-cart-footer">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleReview}>
             <button type="submit" className="ws-primary-btn" disabled={submitting} style={{ width: '100%' }}>
-              <span>{submitting ? 'Placing order…' : 'Place order'}</span>
+              <span>Review order</span>
               <Money value={grandTotal} size={15} />
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Confirmation overlay */}
+      {confirming && (
+        <div className="ws-overlay" onClick={() => setConfirming(false)}>
+          <div className="ws-confirm-sheet" onClick={e => e.stopPropagation()}>
+            <div className="ws-confirm-sheet-handle" />
+            <h2 className="ws-confirm-sheet-title">Confirm your order</h2>
+            <p className="ws-confirm-sheet-sub">Check everything looks right before we send it to the kitchen.</p>
+
+            <div className="ws-confirm-sheet-rows">
+              <div className="ws-confirm-sheet-row">
+                <span className="ws-confirm-sheet-label">Shop</span>
+                <span className="ws-confirm-sheet-value">Wing Shed Truro</span>
+              </div>
+              <div className="ws-confirm-sheet-row">
+                <span className="ws-confirm-sheet-label">Name</span>
+                <span className="ws-confirm-sheet-value">{name}</span>
+              </div>
+              <div className="ws-confirm-sheet-row">
+                <span className="ws-confirm-sheet-label">Phone</span>
+                <span className="ws-confirm-sheet-value">{phone}</span>
+              </div>
+              <div className="ws-confirm-sheet-row">
+                <span className="ws-confirm-sheet-label">Collection</span>
+                <span className="ws-confirm-sheet-value ws-confirm-sheet-value--highlight">
+                  {slots.find(s => s.time === pickupTime)?.label ?? '—'}
+                </span>
+              </div>
+              <div className="ws-confirm-sheet-row">
+                <span className="ws-confirm-sheet-label">Total</span>
+                <span className="ws-confirm-sheet-value"><Money value={grandTotal} /></span>
+              </div>
+            </div>
+
+            {error && <div className="ws-error-msg" style={{ margin: '0 0 12px' }}>{error}</div>}
+
+            <button
+              className="ws-primary-btn"
+              style={{ width: '100%', marginBottom: 10 }}
+              onClick={handleConfirm}
+              disabled={submitting}
+            >
+              {submitting ? 'Placing order…' : 'Confirm & place order'}
+            </button>
+            <button
+              className="ws-ghost-btn"
+              style={{ width: '100%' }}
+              onClick={() => setConfirming(false)}
+            >
+              Edit details
+            </button>
+          </div>
         </div>
       )}
     </div>

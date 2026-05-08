@@ -802,6 +802,7 @@ body {
   border-color: var(--ws-ink);
 }
 .ws-error-msg { font-size: 13px; color: var(--ws-danger); padding: 8px 0; }
+.ws-field-hint { font-size: 12px; color: var(--ws-ink-muted); margin-top: 8px; line-height: 1.4; }
 
 /* ── Confirmation ── */
 .ws-confirm-wrap {
@@ -1058,6 +1059,74 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ── Confirm order sheet ─────────────────────── */
+.ws-confirm-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--ws-bg);
+  border-radius: 24px 24px 0 0;
+  padding: 12px 20px 40px;
+  box-shadow: 0 -4px 40px oklch(0 0 0 / 0.12);
+  animation: wsSlideUp 260ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@keyframes wsSlideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.ws-confirm-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ws-line);
+  margin: 0 auto 22px;
+}
+.ws-confirm-sheet-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ws-ink);
+  margin-bottom: 6px;
+}
+.ws-confirm-sheet-sub {
+  font-size: 13px;
+  color: var(--ws-ink-muted);
+  margin-bottom: 22px;
+  line-height: 1.4;
+}
+.ws-confirm-sheet-rows {
+  border: 1px solid var(--ws-line);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.ws-confirm-sheet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--ws-line);
+  gap: 16px;
+}
+.ws-confirm-sheet-row:last-child { border-bottom: none; }
+.ws-confirm-sheet-label {
+  font-size: 13px;
+  color: var(--ws-ink-muted);
+  flex-shrink: 0;
+}
+.ws-confirm-sheet-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ws-ink);
+  text-align: right;
+}
+.ws-confirm-sheet-value--highlight {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ws-accent);
 }
 
 /* ── Money display ── */
