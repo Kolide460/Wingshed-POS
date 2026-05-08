@@ -60,9 +60,9 @@ const SHOW_DIPS_CATEGORIES = ['wings & tenders', 'loaded fries', 'sides']
 
 export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
   const cat = categoryName.toLowerCase()
-  const itemName = item.name.toLowerCase()
-  const isWingItem   = itemName.includes('wing')
-  const isTenderItem = itemName.includes('tender')
+  const itemName = item.name.toLowerCase().trim()
+  const isWingItem   = itemName === 'wings' || itemName === 'wing'
+  const isTenderItem = itemName === 'tenders' || itemName === 'tender'
   const showSizes = isWingItem || isTenderItem
   const sizes = isWingItem ? WING_SIZES : isTenderItem ? TENDER_SIZES : []
 
