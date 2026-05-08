@@ -113,7 +113,7 @@ export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
         <div className="ws-detail-hero">
           <div className="ws-detail-eyebrow">{categoryName}</div>
           <h1 className="ws-detail-name">{item.name}</h1>
-          {item.description && <p className="ws-detail-desc">{item.description}</p>}
+          {item.description && !showSizes && <p className="ws-detail-desc">{item.description}</p>}
           <Money value={basePrice} />
         </div>
 
