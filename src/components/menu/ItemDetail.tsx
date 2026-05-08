@@ -21,13 +21,13 @@ const DIPS = [
 ]
 
 const WING_SIZES = [
-  { id: '6',  label: '6 wings',   price: 7.95 },
-  { id: '12', label: '12 wings',  price: 13.95 },
+  { id: '6',  label: '6',  price: 7.95 },
+  { id: '12', label: '12', price: 13.95 },
 ]
 
 const TENDER_SIZES = [
-  { id: '3', label: '3 tenders', price: 7.95 },
-  { id: '6', label: '6 tenders', price: 13.95 },
+  { id: '3', label: '3', price: 7.95 },
+  { id: '6', label: '6', price: 13.95 },
 ]
 
 interface Props {
@@ -86,8 +86,8 @@ export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
   const handleAdd = () => {
     const parts: string[] = []
     if (showSizes) {
-      const sizeObj = sizes.find(s => s.id === size)
-      if (sizeObj) parts.push(sizeObj.label)
+      const unit = isWingItem ? 'wings' : 'tenders'
+      parts.push(`${size} ${unit}`)
     }
     if (sauce) {
       const sauceObj = SAUCES.find(s => s.id === sauce)
@@ -123,7 +123,7 @@ export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
             <div className="ws-section">
               <div className="ws-section-header">
                 <div>
-                  <span className="ws-section-title">Choose size</span>
+                  <span className="ws-section-title">How many?</span>
                   <span className="ws-section-required">Required</span>
                 </div>
               </div>
