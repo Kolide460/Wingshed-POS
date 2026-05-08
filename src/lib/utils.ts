@@ -19,10 +19,11 @@ export function formatTime(time: string): string {
 }
 
 export function generateTimeSlots(
-  settings: Pick<Settings, 'lead_time_minutes' | 'slot_duration_minutes'>,
+  settings: Pick<Settings, 'lead_time_minutes' | 'slot_duration_minutes' | 'max_orders_per_slot'>,
   businessHours: BusinessHours[],
   blockedSlots: BlockedSlot[],
-  targetDate: Date
+  targetDate: Date,
+  orderCounts: Record<string, number> = {}
 ): TimeSlot[] {
   const dayOfWeek = targetDate.getDay()
   const hours = businessHours.find((h) => h.day_of_week === dayOfWeek)
@@ -32,9 +33,7 @@ export function generateTimeSlots(
   const now = new Date()
   const leadMs = settings.lead_time_minutes * 60 * 1000
   const slotMs = settings.slot_duration_minutes * 60 * 1000
-
-  const [openH, openM] = hours.open_time.split(':').map(Number)
-  const [closeH, closeM] = hours.close_time.split(':').map(Number)
+  const maxOrders = settings.max_orders_per_slot
 
   const dateStr = targetDate.toISOString().split('T')[0]
   const openDate = new Date(`${dateStr}T${hours.open_time.slice(0, 5)}:00`)
@@ -46,8 +45,7 @@ export function generateTimeSlots(
   while (cursor < closeTime) {
     const slotDate = new Date(cursor)
     const timeStr = slotDate.toTimeString().slice(0, 5)
-    const slotEnd = new Date(cursor + slotMs)
-    const slotEndStr = slotEnd.toTimeString().slice(0, 5)
+    const isoKey = slotDate.toISOString()
 
     const tooSoon = slotDate.getTime() < now.getTime() + leadMs
     const blocked = blockedSlots.some(
@@ -56,11 +54,12 @@ export function generateTimeSlots(
         b.start_time <= timeStr &&
         b.end_time > timeStr
     )
+    const full = maxOrders > 0 && (orderCounts[isoKey] ?? 0) >= maxOrders
 
     slots.push({
-      time: slotDate.toISOString(),
+      time: isoKey,
       label: formatTime(timeStr),
-      available: !tooSoon && !blocked,
+      available: !tooSoon && !blocked && !full,
     })
 
     cursor += slotMs

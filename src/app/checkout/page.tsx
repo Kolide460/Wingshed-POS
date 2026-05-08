@@ -46,22 +46,30 @@ export default function CheckoutPage() {
   useEffect(() => {
     const supabase = createClient()
     async function loadSlots() {
-      const [{ data: hours }, { data: blocked }, { data: settings }] = await Promise.all([
+      const today = new Date().toISOString().split('T')[0]
+      const [{ data: hours }, { data: blocked }, { data: settings }, { data: orders }] = await Promise.all([
         supabase.from('business_hours').select('*'),
-        supabase.from('blocked_slots').select('*').gte('block_date', new Date().toISOString().split('T')[0]),
+        supabase.from('blocked_slots').select('*').gte('block_date', today),
         supabase.from('settings').select('*'),
+        supabase.from('orders').select('pickup_time').gte('pickup_time', today + 'T00:00:00').lte('pickup_time', today + 'T23:59:59').neq('status', 'cancelled'),
       ])
       const settingsMap = Object.fromEntries(
         (settings ?? []).map((s: { key: string; value: string }) => [s.key, s.value])
       ) as Record<string, string>
+      const orderCounts: Record<string, number> = {}
+      for (const o of (orders ?? [])) {
+        orderCounts[o.pickup_time] = (orderCounts[o.pickup_time] ?? 0) + 1
+      }
       const generated = generateTimeSlots(
         {
           lead_time_minutes: parseInt(settingsMap.lead_time_minutes ?? '30'),
           slot_duration_minutes: parseInt(settingsMap.slot_duration_minutes ?? '15'),
+          max_orders_per_slot: parseInt(settingsMap.max_orders_per_slot ?? '0'),
         },
         (hours ?? []) as BusinessHours[],
         (blocked ?? []) as BlockedSlot[],
-        new Date()
+        new Date(),
+        orderCounts
       )
       setSlots(generated)
     }
@@ -178,21 +186,19 @@ export default function CheckoutPage() {
           <div className="ws-eyebrow">Collection time</div>
           {availableSlots.length === 0 ? (
             <div style={{ color: 'var(--ws-ink-muted)', fontSize: 13, padding: '8px 0' }}>
-              No slots available today. Please contact us.
+              No times available today. Please contact us.
             </div>
           ) : (
-            <div className="ws-slot-grid">
+            <select
+              className="ws-checkout-input ws-checkout-select"
+              value={pickupTime}
+              onChange={e => setPickupTime(e.target.value)}
+            >
+              <option value="">Select a time…</option>
               {availableSlots.map(slot => (
-                <button
-                  key={slot.time}
-                  type="button"
-                  className={`ws-slot-btn${pickupTime === slot.time ? ' selected' : ''}`}
-                  onClick={() => setPickupTime(slot.time)}
-                >
-                  {slot.label}
-                </button>
+                <option key={slot.time} value={slot.time}>{slot.label}</option>
               ))}
-            </div>
+            </select>
           )}
         </div>
 
