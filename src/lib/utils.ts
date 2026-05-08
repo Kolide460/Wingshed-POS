@@ -37,8 +37,8 @@ export function generateTimeSlots(
   const [closeH, closeM] = hours.close_time.split(':').map(Number)
 
   const dateStr = targetDate.toISOString().split('T')[0]
-  const openDate = new Date(`${dateStr}T${hours.open_time}:00`)
-  const closeDate = new Date(`${dateStr}T${hours.close_time}:00`)
+  const openDate = new Date(`${dateStr}T${hours.open_time.slice(0, 5)}:00`)
+  const closeDate = new Date(`${dateStr}T${hours.close_time.slice(0, 5)}:00`)
 
   let cursor = openDate.getTime()
   const closeTime = closeDate.getTime()
