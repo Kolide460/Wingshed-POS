@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { formatPrice } from '@/lib/utils'
 import type { MenuItem } from '@/types'
 
 const SAUCES = [
@@ -19,6 +18,16 @@ const DIPS = [
   { id: 'brown-butter', name: 'Brown Butter G Mayo', price: 2.00 },
   { id: 'ranch',        name: 'Buttermilk Ranch',    price: 2.00 },
   { id: 'crack-sauce',  name: 'Crack Sauce',         price: 2.00 },
+]
+
+const WING_SIZES = [
+  { id: '6',  label: '6 wings',   price: 7.95 },
+  { id: '12', label: '12 wings',  price: 13.95 },
+]
+
+const TENDER_SIZES = [
+  { id: '3', label: '3 tenders', price: 7.95 },
+  { id: '6', label: '6 tenders', price: 13.95 },
 ]
 
 interface Props {
@@ -51,22 +60,35 @@ const SHOW_DIPS_CATEGORIES = ['wings & tenders', 'loaded fries', 'sides']
 
 export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
   const cat = categoryName.toLowerCase()
-  const isWings = cat.includes('wing') || cat.includes('tender')
+  const itemName = item.name.toLowerCase()
+  const isWingItem   = itemName.includes('wing')
+  const isTenderItem = itemName.includes('tender')
+  const showSizes = isWingItem || isTenderItem
+  const sizes = isWingItem ? WING_SIZES : isTenderItem ? TENDER_SIZES : []
+
+  const isWings  = cat.includes('wing') || cat.includes('tender')
   const showDips = SHOW_DIPS_CATEGORIES.some(c => cat.includes(c.split(' ')[0]))
+
+  const [size, setSize]   = useState(sizes[0]?.id ?? '')
   const [sauce, setSauce] = useState<string>(isWings ? 'hot-honey' : '')
-  const [dips, setDips] = useState<string[]>([])
-  const [qty, setQty] = useState(1)
+  const [dips, setDips]   = useState<string[]>([])
+  const [qty, setQty]     = useState(1)
   const [notes, setNotes] = useState('')
 
-  const dipsTotal = dips.length * 2.00
-  const lineTotal = (item.price + dipsTotal) * qty
-  const canAdd = !isWings || sauce !== ''
+  const basePrice  = showSizes ? (sizes.find(s => s.id === size)?.price ?? item.price) : item.price
+  const dipsTotal  = dips.length * 2.00
+  const lineTotal  = (basePrice + dipsTotal) * qty
+  const canAdd     = !isWings || sauce !== ''
 
   const toggleDip = (id: string) =>
     setDips(d => d.includes(id) ? d.filter(x => x !== id) : [...d, id])
 
   const handleAdd = () => {
     const parts: string[] = []
+    if (showSizes) {
+      const sizeObj = sizes.find(s => s.id === size)
+      if (sizeObj) parts.push(sizeObj.label)
+    }
     if (sauce) {
       const sauceObj = SAUCES.find(s => s.id === sauce)
       if (sauceObj) parts.push(`Sauce: ${sauceObj.name}`)
@@ -76,7 +98,8 @@ export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
       parts.push(`Dips: ${dipNames.join(', ')}`)
     }
     if (notes) parts.push(notes)
-    onAdd(item, parts.join(' | '))
+    const finalItem = basePrice !== item.price ? { ...item, price: basePrice } : item
+    onAdd(finalItem, parts.join(' | '))
     onClose()
   }
 
@@ -91,10 +114,35 @@ export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
           <div className="ws-detail-eyebrow">{categoryName}</div>
           <h1 className="ws-detail-name">{item.name}</h1>
           {item.description && <p className="ws-detail-desc">{item.description}</p>}
-          <Money value={item.price} />
+          <Money value={basePrice} />
         </div>
 
         <div className="ws-detail-body">
+          {/* Size picker — Wings or Tenders only */}
+          {showSizes && (
+            <div className="ws-section">
+              <div className="ws-section-header">
+                <div>
+                  <span className="ws-section-title">Choose size</span>
+                  <span className="ws-section-required">Required</span>
+                </div>
+              </div>
+              <div className="ws-size-grid">
+                {sizes.map(s => (
+                  <button
+                    key={s.id}
+                    className={`ws-size-btn${size === s.id ? ' selected' : ''}`}
+                    onClick={() => setSize(s.id)}
+                  >
+                    <span className="ws-size-label">{s.label}</span>
+                    <span className="ws-size-price">£{s.price.toFixed(2)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sauce picker */}
           {isWings && (
             <div className="ws-section">
               <div className="ws-section-header">
@@ -126,30 +174,34 @@ export function ItemDetail({ item, categoryName, onClose, onAdd }: Props) {
             </div>
           )}
 
-          {showDips && <div className="ws-section">
-            <div className="ws-section-header">
-              <span className="ws-section-title">Add dips</span>
-              <span className="ws-section-hint">£2.00 each</span>
+          {/* Dips */}
+          {showDips && (
+            <div className="ws-section">
+              <div className="ws-section-header">
+                <span className="ws-section-title">Add dips</span>
+                <span className="ws-section-hint">£2.00 each</span>
+              </div>
+              <div className="ws-section-rows">
+                {DIPS.map(d => (
+                  <button
+                    key={d.id}
+                    className={`ws-option-row${dips.includes(d.id) ? ' selected' : ''}`}
+                    onClick={() => toggleDip(d.id)}
+                  >
+                    <span style={{ flex: 1 }} className="ws-option-name">{d.name}</span>
+                    <span style={{ marginRight: 12, color: 'var(--ws-ink-muted)', fontSize: 13 }}>
+                      <Money value={d.price} />
+                    </span>
+                    <div className={`ws-checkbox${dips.includes(d.id) ? ' active' : ''}`}>
+                      {dips.includes(d.id) && <CheckIcon />}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="ws-section-rows">
-              {DIPS.map(d => (
-                <button
-                  key={d.id}
-                  className={`ws-option-row${dips.includes(d.id) ? ' selected' : ''}`}
-                  onClick={() => toggleDip(d.id)}
-                >
-                  <span style={{ flex: 1 }} className="ws-option-name">{d.name}</span>
-                  <span style={{ marginRight: 12, color: 'var(--ws-ink-muted)', fontSize: 13 }}>
-                    <Money value={d.price} />
-                  </span>
-                  <div className={`ws-checkbox${dips.includes(d.id) ? ' active' : ''}`}>
-                    {dips.includes(d.id) && <CheckIcon />}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>}
+          )}
 
+          {/* Notes */}
           <div className="ws-section">
             <div className="ws-section-header">
               <span className="ws-section-title">Anything else?</span>

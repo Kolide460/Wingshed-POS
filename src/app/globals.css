@@ -782,6 +782,38 @@ body {
   color: var(--ws-bg);
   border-color: var(--ws-ink);
 }
+.ws-size-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 20px 4px;
+}
+.ws-size-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px;
+  border-radius: 14px;
+  border: 1.5px solid var(--ws-line);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ws-size-btn.selected {
+  border-color: var(--ws-ink);
+  background: var(--ws-ink);
+  color: var(--ws-bg);
+}
+.ws-size-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ws-size-price {
+  font-size: 13px;
+  opacity: 0.65;
+}
 .ws-slot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ws-slot-btn {
   padding: 10px 6px;
